@@ -68,7 +68,7 @@ router.get('/logout', async (req, res) => {
     let user = jwt.verify(token, process.env.JWT_SECRET);
     await magic.users.logoutByIssuer(user.issuer);
     removeTokenCookie(res);
-    res.writeHead(302, { Location: `${process.env.CLIENT_URL}/login` });
+    res.writeHead(302, { Location: `https://magic-react-express.herokuapp.com/login` });
     res.end();
   } catch (error) {
     res.status(401).json({ message: 'User is not logged in' });
