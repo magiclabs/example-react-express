@@ -4,7 +4,6 @@ const Layout = (props) => (
   <>
     <Header />
     <main>
-      {console.log(process.env)}
       <div className='container'>{props.children}</div>
     </main>
     <style>{`

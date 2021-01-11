@@ -1,29 +1,26 @@
 import { useUser } from '../lib/hooks';
-import { Link } from 'react-router-dom';
 import { CallToAction, TextButton } from '@magiclabs/ui';
+import { useHistory } from 'react-router-dom';
 
 const Header = () => {
   const user = useUser();
+  const history = useHistory();
 
   return (
     <header>
       <nav>
         <ul>
           <li>
-            <Link to='/'>
-              <TextButton color='primary' size='sm'>
-                Home
-              </TextButton>
-            </Link>
+            <TextButton color='primary' size='sm' onPress={() => history.push('/')}>
+              Home
+            </TextButton>
           </li>
           {user ? (
             <>
               <li>
-                <Link to='/profile'>
-                  <TextButton color='primary' size='sm'>
-                    Profile
-                  </TextButton>
-                </Link>
+                <TextButton color='primary' size='sm' onPress={() => history.push('/profile')}>
+                  Profile
+                </TextButton>
               </li>
               <li>
                 <a href={`${process.env.REACT_APP_SERVER_URL}/api/logout`}>
@@ -35,11 +32,9 @@ const Header = () => {
             </>
           ) : (
             <li>
-              <Link to='/login'>
-                <CallToAction color='primary' size='sm'>
-                  Login
-                </CallToAction>
-              </Link>
+              <CallToAction color='primary' size='sm' onPress={() => history.push('/profile')}>
+                Login
+              </CallToAction>
             </li>
           )}
         </ul>
