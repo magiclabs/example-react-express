@@ -1,19 +1,18 @@
-import { useUser } from '../lib/hooks';
-import Layout from './layout';
+import { useContext, useEffect } from 'react';
+import { useHistory } from 'react-router';
+import { UserContext } from '../lib/UserContext';
+import Loading from './loading';
 
 const Home = () => {
-  const user = useUser();
+  const [user] = useContext(UserContext);
+  const history = useHistory();
 
-  return (
-    <Layout>
-      {user ? <div>You're logged in!</div> : <div>Log in to continue</div>}
-      <style>{`
-        div {
-          font-size: 17px;
-        }
-      `}</style>
-    </Layout>
-  );
+  // If not loading and no user found, redirect to /login
+  useEffect(() => {
+    user && !user.loading && !user.issuer && history.push('/login');
+  }, [user, history]);
+
+  return <>{user?.loading ? <Loading /> : user?.issuer && <div>You're logged in!</div>}</>;
 };
 
 export default Home;

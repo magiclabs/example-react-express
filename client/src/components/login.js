@@ -1,88 +1,61 @@
-import { useState, useEffect } from 'react';
-import { Magic } from 'magic-sdk';
-import { useUser } from '../lib/hooks';
-import { OAuthExtension } from '@magic-ext/oauth';
-import { WebAuthnExtension } from '@magic-ext/webauthn';
-import Layout from './layout';
-import Form from './form';
+import { useState, useEffect, useContext } from 'react';
 import { useHistory } from 'react-router-dom';
+import { magic } from '../lib/magic';
+import { UserContext } from '../lib/UserContext';
+import EmailForm from './email-form';
 import SocialLogins from './social-logins';
 
 const Login = () => {
-  useUser({ redirectTo: '/', redirectIfFound: true });
   const history = useHistory();
-  const [magic, setMagic] = useState(null);
   const [disabled, setDisabled] = useState(false);
+  const [user, setUser] = useContext(UserContext);
 
+  // If user is already logged in, redirect to profile page
   useEffect(() => {
-    !magic &&
-      setMagic(
-        new Magic(process.env.REACT_APP_MAGIC_PUBLISHABLE_KEY, {
-          extensions: [new OAuthExtension(), new WebAuthnExtension()],
-        })
-      );
-    magic?.preload();
-  }, [magic]);
+    user && user.issuer && history.push('/profile');
+  }, [user, history]);
 
   async function handleLoginWithEmail(email) {
     try {
       setDisabled(true); // disable login button to prevent multiple emails from being triggered
+
+      // Trigger Magic link to be sent to user
       let didToken = await magic.auth.loginWithMagicLink({
         email,
-        redirectURI: `${process.env.REACT_APP_CLIENT_URL}/callback`,
+        redirectURI: new URL('/callback', window.location.origin).href, // optional redirect back to your app after magic link is clicked
       });
-      authenticateWithServer(didToken);
+
+      // Validate didToken with server
+      const res = await fetch(`${process.env.REACT_APP_SERVER_URL}/api/login`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: 'Bearer ' + didToken,
+        },
+      });
+
+      // Set the UserContext to the now logged in user
+      let userMetadata = await magic.user.getMetadata();
+      await setUser(userMetadata);
+
+      res.status === 200 && history.push('/profile');
     } catch (error) {
       setDisabled(false); // re-enable login button - user may have requested to edit their email
       console.log(error);
     }
   }
 
-  async function handleLoginWithSocial(provider) {
-    await magic.oauth.loginWithRedirect({
+  function handleLoginWithSocial(provider) {
+    magic.oauth.loginWithRedirect({
       provider,
-      redirectURI: `${process.env.REACT_APP_CLIENT_URL}/callback`,
+      redirectURI: new URL('/callback', window.location.origin).href, // required redirect to finish social login
     });
-  }
-
-  // try to login with webauthn, if that fails, revert to registering with webauthn
-  async function handleLoginWithWebauthn(email) {
-    try {
-      let didToken = await magic.webauthn.login({ username: email });
-      authenticateWithServer(didToken);
-    } catch (error) {
-      try {
-        let didToken = await magic.webauthn.registerNewUser({ username: email });
-        authenticateWithServer(didToken);
-      } catch (err) {
-        alert(
-          'Failed to authenticate. Must be using a supported device and a username not already taken.'
-        );
-        console.log(err);
-      }
-    }
-  }
-
-  async function authenticateWithServer(didToken) {
-    const res = await fetch(`${process.env.REACT_APP_SERVER_URL}/api/login`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: 'Bearer ' + didToken,
-      },
-      credentials: 'include',
-    });
-    res.status === 200 && history.push('/');
   }
 
   return (
-    <Layout>
+    <>
       <div className='login'>
-        <Form
-          disabled={disabled}
-          onEmailSubmit={handleLoginWithEmail}
-          onWebauthnSubmit={handleLoginWithWebauthn}
-        />
+        <EmailForm disabled={disabled} onEmailSubmit={handleLoginWithEmail} />
         <SocialLogins onSubmit={handleLoginWithSocial} />
       </div>
       <style>{`
@@ -97,7 +70,7 @@ const Login = () => {
           box-sizing: border-box;
         }
       `}</style>
-    </Layout>
+    </>
   );
 };
 

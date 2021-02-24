@@ -1,19 +1,12 @@
 import { useState } from 'react';
-import Webauthn from './webauthn';
-import { validateEmail } from '../lib/helpers';
-import { Input, Icon, MonochromeIcons, useToast, CallToAction } from '@magiclabs/ui';
+import { Input, Icon, MonochromeIcons, CallToAction } from '@magiclabs/ui';
 
-const Form = ({ onEmailSubmit, disabled, onWebauthnSubmit }) => {
+const EmailForm = ({ onEmailSubmit, disabled }) => {
   const [email, setEmail] = useState('');
-  const { createToast } = useToast();
-
-  const addToast = () => {
-    createToast({ message: 'Invalid email', type: 'error', lifespan: 2000 });
-  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    !email || !validateEmail(email) ? addToast() : onEmailSubmit(email);
+    onEmailSubmit(email);
   };
 
   return (
@@ -24,13 +17,12 @@ const Form = ({ onEmailSubmit, disabled, onWebauthnSubmit }) => {
           <Input
             placeholder='Enter your email'
             size='sm'
-            type='email'
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            prefix={<Icon inline type={MonochromeIcons.Envelope} size={22} />}
+            prefix={<Icon type={MonochromeIcons.Envelope} size={23} color={'#000'} />}
           />
         </div>
-        <div className='submit'>
+        <div>
           <CallToAction
             leadingIcon={MonochromeIcons.PaperPlane}
             color='primary'
@@ -40,7 +32,6 @@ const Form = ({ onEmailSubmit, disabled, onWebauthnSubmit }) => {
           >
             Send Magic Link
           </CallToAction>
-          <Webauthn onSubmit={onWebauthnSubmit} email={email} addToast={addToast} />
         </div>
       </form>
       <style>{`
@@ -55,18 +46,12 @@ const Form = ({ onEmailSubmit, disabled, onWebauthnSubmit }) => {
           margin: 25px 0;
         }
         .input-wrapper {
-          width: 87%;
-          margin: 0 auto;
-        }
-        .submit {
-          display: flex;
-          justify-content: space-between;
-          width: 87%;
-          margin: 20px auto 0;
+          width: 80%;
+          margin: 0 auto 20px;
         }
       `}</style>
     </>
   );
 };
 
-export default Form;
+export default EmailForm;

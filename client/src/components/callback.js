@@ -1,54 +1,33 @@
-import { useState, useEffect } from 'react';
-import { Magic } from 'magic-sdk';
-import { OAuthExtension } from '@magic-ext/oauth';
-import Layout from './layout';
+import { useEffect, useContext } from 'react';
+import { useHistory } from 'react-router-dom';
+import { magic } from '../lib/magic';
+import { UserContext } from '../lib/UserContext';
+import Loading from './loading';
 
 const Callback = (props) => {
-  const [magic, setMagic] = useState(null);
-  const [errorMsg, setErrorMsg] = useState('');
-  const [showValidatingToken, setShowValidatingToken] = useState(false);
+  const history = useHistory();
+  const [user, setUser] = useContext(UserContext);
 
+  // The redirect contains a `provider` query param if the user is logging in with a social provider
   useEffect(() => {
-    !magic &&
-      setMagic(
-        new Magic(process.env.REACT_APP_MAGIC_PUBLISHABLE_KEY, {
-          extensions: [new OAuthExtension()],
-        })
-      );
-    /* if `provider` is in our query params, the user is logging in with a social provider */
     let provider = new URLSearchParams(props.location.search).get('provider');
-    if (magic) {
-      provider ? finishSocialLogin() : finishEmailRedirectLogin();
-    }
-  }, [magic, props.location.search]);
+    provider ? finishSocialLogin() : finishEmailRedirectLogin();
+  }, [props.location.search]);
 
-  const finishEmailRedirectLogin = async () => {
-    let magicCredential = new URLSearchParams(props.location.search).get('magic_credential');
-    if (magicCredential) {
-      try {
-        let didToken = await magic.auth.loginWithCredential();
-        setShowValidatingToken(true);
-        await authenticateWithServer(didToken);
-      } catch (error) {
-        console.log(error);
-        setErrorMsg('Error logging in. Please try again.');
-      }
-    }
-  };
-
+  // `getRedirectResult()` returns an object with user data from Magic and the social provider
   const finishSocialLogin = async () => {
-    try {
-      let {
-        magic: { idToken },
-      } = await magic.oauth.getRedirectResult();
-      setShowValidatingToken(true);
-      await authenticateWithServer(idToken);
-    } catch (error) {
-      console.log(error);
-      setErrorMsg('Error logging in. Please try again.');
-    }
+    let result = await magic.oauth.getRedirectResult();
+    authenticateWithServer(result.magic.idToken);
   };
 
+  // `loginWithCredential()` returns a didToken for the user logging in
+  const finishEmailRedirectLogin = () => {
+    let magicCredential = new URLSearchParams(props.location.search).get('magic_credential');
+    if (magicCredential)
+      magic.auth.loginWithCredential().then((didToken) => authenticateWithServer(didToken));
+  };
+
+  // Send token to server to validate
   const authenticateWithServer = async (didToken) => {
     let res = await fetch(`${process.env.REACT_APP_SERVER_URL}/api/login`, {
       method: 'POST',
@@ -56,37 +35,16 @@ const Callback = (props) => {
         'Content-Type': 'application/json',
         Authorization: 'Bearer ' + didToken,
       },
-      credentials: 'include',
     });
-    res.status === 200 && props.history.push('/');
+
+    // Set the UserContext to the now logged in user
+    let userMetadata = await magic.user.getMetadata();
+    await setUser(userMetadata);
+
+    res.status === 200 && history.push('/profile');
   };
 
-  return (
-    <Layout>
-      {errorMsg ? (
-        <div className='error'>{errorMsg}</div>
-      ) : (
-        <div className='callback-container'>
-          <div className='auth-step'>Retrieving auth token...</div>
-          {showValidatingToken && <div className='auth-step'>Validating token...</div>}
-        </div>
-      )}
-
-      <style>{`
-        .callback-container {
-          width: 100%;
-          text-align: center;
-        }
-        .auth-step {
-          margin: 30px 0;
-          font-size: 17px;
-        }
-        .error {
-          color: red;
-        }
-      `}</style>
-    </Layout>
-  );
+  return <Loading />;
 };
 
 export default Callback;

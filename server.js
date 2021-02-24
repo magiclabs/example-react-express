@@ -1,18 +1,27 @@
-require('dotenv').config();
+require('dotenv').config(); // enables loading .env vars
 const express = require('express');
 const app = express();
-const cookieParser = require('cookie-parser');
-const userRouter = require('./routes/user');
+const { Magic } = require('@magic-sdk/admin');
 const path = require('path');
 const cors = require('cors');
 
-app.use(cors({ credentials: true, origin: process.env.CLIENT_URL }));
-app.use(express.json());
-app.use(cookieParser());
+// Initiating Magic instance for server-side methods
+const magic = new Magic(process.env.MAGIC_SECRET_KEY);
 
-app.use('/api', userRouter);
+// Allow requests from client-side
+app.use(cors({ origin: process.env.CLIENT_URL }));
 
-/* For heroku deployment */
+app.post('/api/login', async (req, res) => {
+  try {
+    const didToken = req.headers.authorization.substr(7);
+    await magic.token.validate(didToken);
+    res.status(200).json({ authenticated: true });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// For heroku deployment
 if (process.env.NODE_ENV === 'production') {
   app.use(express.static('client/build'));
   app.get('*', (req, res) => {
@@ -20,6 +29,6 @@ if (process.env.NODE_ENV === 'production') {
   });
 }
 
-const listener = app.listen(process.env.PORT || 8080, function () {
-  console.log('Listening on port ' + listener.address().port);
-});
+const listener = app.listen(process.env.PORT || 8080, () =>
+  console.log('Listening on port ' + listener.address().port)
+);
