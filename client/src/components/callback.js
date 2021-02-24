@@ -37,11 +37,12 @@ const Callback = (props) => {
       },
     });
 
-    // Set the UserContext to the now logged in user
-    let userMetadata = await magic.user.getMetadata();
-    await setUser(userMetadata);
-
-    res.status === 200 && history.push('/profile');
+    if (res.status === 200) {
+      // Set the UserContext to the now logged in user
+      let userMetadata = await magic.user.getMetadata();
+      await setUser(userMetadata);
+      history.push('/profile');
+    }
   };
 
   return <Loading />;

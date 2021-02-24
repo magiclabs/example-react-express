@@ -11,7 +11,8 @@ import Layout from './components/layout';
 function App() {
   const [user, setUser] = useState();
 
-  // If user is logged in, set the UserContext with user data
+  // If isLoggedIn is true, set the UserContext with user data
+  // Otherwise, set it to {user: null}
   useEffect(() => {
     setUser({ loading: true });
     magic.user.isLoggedIn().then((isLoggedIn) => {

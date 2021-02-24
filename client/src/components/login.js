@@ -34,19 +34,20 @@ const Login = () => {
         },
       });
 
-      // Set the UserContext to the now logged in user
-      let userMetadata = await magic.user.getMetadata();
-      await setUser(userMetadata);
-
-      res.status === 200 && history.push('/profile');
+      if (res.status === 200) {
+        // Set the UserContext to the now logged in user
+        let userMetadata = await magic.user.getMetadata();
+        await setUser(userMetadata);
+        history.push('/profile');
+      }
     } catch (error) {
       setDisabled(false); // re-enable login button - user may have requested to edit their email
       console.log(error);
     }
   }
 
-  function handleLoginWithSocial(provider) {
-    magic.oauth.loginWithRedirect({
+  async function handleLoginWithSocial(provider) {
+    await magic.oauth.loginWithRedirect({
       provider,
       redirectURI: new URL('/callback', window.location.origin).href, // required redirect to finish social login
     });

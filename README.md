@@ -32,14 +32,14 @@ You can grab the `REACT_APP_MAGIC_PUBLISHABLE_KEY` (`client/.env`) and `MAGIC_SE
 ### client/.env (client)
 
 ```txt
-REACT_APP_MAGIC_PUBLISHABLE_KEY=pk_test_...
+REACT_APP_MAGIC_PUBLISHABLE_KEY=pk_test_1234567890
 REACT_APP_CLIENT_URL=http://localhost:3000
 ```
 
 ### .env (server)
 
 ```txt
-MAGIC_SECRET_KEY=sk_test...
+MAGIC_SECRET_KEY=sk_test_1234567890
 CLIENT_URL=http://localhost:3000
 ```
 
