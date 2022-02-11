@@ -39,7 +39,7 @@ REACT_APP_CLIENT_URL=http://localhost:3000
 ### .env (server)
 
 ```txt
-MAGIC_SECRET_KEY=sk_test_1234567890
+MAGIC_SECRET_KEY=sk_live_123...
 CLIENT_URL=http://localhost:3000
 ```
 
